@@ -21319,6 +21319,12 @@
     githubId = 18196237;
     name = "Quentin Inkling";
   };
+  QuickMythril = {
+    email = "quickmythril@protonmail.com";
+    github = "QuickMythril";
+    githubId = 20410795;
+    name = "QuickMythril";
+  };
   quincepie = {
     email = "flaky@quincepie.dev";
     github = "Quince-Pie";
