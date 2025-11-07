@@ -1,0 +1,20 @@
+--- a/pom.xml
++++ b/pom.xml
+@@ -137,6 +137,9 @@
+ 					<injectAllReactorProjects>true</injectAllReactorProjects>
+ 					<offline>true</offline>
+ 					<skipPoms>false</skipPoms>
++					<failOnNoGitDirectory>false</failOnNoGitDirectory>
++					<failOnUnableToExtractRepoInfo>false</failOnUnableToExtractRepoInfo>
++					<skip>true</skip>
+ 				</configuration>
+ 			</plugin>
+ 			<!-- inject correct url to swagger json file into swagger-ui -->
+@@ -207,6 +210,7 @@
+ 									<value/>
+ 								</replacement>
+ 							</replacements>
++							<ignoreErrors>true</ignoreErrors>
+ 						</configuration>
+ 					</execution>
+ 				</executions>
