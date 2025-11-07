@@ -27,9 +27,12 @@ maven.buildMavenPackage rec {
   mvnParameters = "-DskipTests -Dproject.build.outputTimestamp=1980-01-01T00:00:02Z";
   installPhase = ''
     runHook preInstall
-    mkdir -p $out/share/java $out/bin
+    mkdir -p $out/share/java $out/share/qortal $out/bin
     jar="$(echo target/qortal-*.jar)"
     install -Dm644 "$jar" "$out/share/java/qortal.jar"
+    if [ -f log4j2.properties ]; then
+      install -Dm644 log4j2.properties "$out/share/qortal/log4j2.properties"
+    fi
     cat > $out/bin/qortal <<'EOF'
     #!@SHELL@
     set -euo pipefail
@@ -37,7 +40,27 @@ maven.buildMavenPackage rec {
       echo "@PKG_VERSION@"
       exit 0
     fi
-    exec @JAVA@ -jar "@OUT@/share/java/qortal.jar" "$@"
+    set +u
+    if [ -n "$QORTAL_HOME" ]; then
+      STATE_DIR="$QORTAL_HOME"
+    else
+      STATE_DIR="$HOME/qortal"
+    fi
+    set -u
+    mkdir -p "STATE_DIR"
+    if [ ! -s "$STATE_DIR/settings.json" ]; then
+      printf '{}' > "$STATE_DIR/settings.json"
+    fi
+    cp -f "@OUT@/share/java/qortal.jar" "$STATE_DIR/qortal.jar"
+    if [ -f "@OUT@/share/qortal/log4j2.properties" ]; then
+      cp -f "@OUT@/share/qortal/log4j2.properties" "$STATE_DIR/log4j2.properties"
+    fi
+    cd "$STATE_DIR"
+    if [ -f "./log4j2.properties" ]; then
+      exec @JAVA@ -Dlog4j.configurationFile=./log4j2.properties -jar ./qortal.jar "$@"
+    else
+      exec @JAVA@ -jar "./qortal.jar" "$@"
+    fi
     EOF
     substituteInPlace $out/bin/qortal \
       --subst-var-by JAVA ${jre_headless}/bin/java \
@@ -77,5 +100,4 @@ maven.buildMavenPackage rec {
     mainProgram = "qortal";
     changelog = "https://github.com/Qortal/qortal/releases/tag/v${version}";
   };
-  # TODO: add default files (settings.json, etc.)
 }
