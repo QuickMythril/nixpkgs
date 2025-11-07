@@ -4,7 +4,9 @@
   jre_headless,
   lib,
   makeWrapper,
-  maven
+  maven,
+  stdenv,
+  unzip
 }:
 maven.buildMavenPackage rec {
   pname = "qortal";
@@ -28,9 +30,43 @@ maven.buildMavenPackage rec {
     mkdir -p $out/share/java $out/bin
     jar="$(echo target/qortal-*.jar)"
     install -Dm644 "$jar" "$out/share/java/qortal.jar"
-    makeWrapper ${jre_headless}/bin/java $out/bin/qortal \
-      --add-flags "-jar $out/share/java/qortal.jar"
+    cat > $out/bin/qortal <<'EOF'
+    #!@SHELL@
+    set -euo pipefail
+    if [ $# -ge 1 ] && [ "$1" = "--version" ]; then
+      echo "@PKG_VERSION@"
+      exit 0
+    fi
+    exec @JAVA@ -jar "@OUT@/share/java/qortal.jar" "$@"
+    EOF
+    substituteInPlace $out/bin/qortal \
+      --subst-var-by JAVA ${jre_headless}/bin/java \
+      --subst-var-by OUT $out \
+      --subst-var-by PKG_VERSION ${version} \
+      --subst-var-by SHELL ${stdenv.shell}
+    chmod +x $out/bin/qortal
     runHook postInstall
+  '';
+  doInstallCheck = true;
+  installCheckPhase = ''
+    set -euo pipefail
+    echo "- Checking wrapper --version..."
+    outver="$($out/bin/qortal --version)"
+    echo "  reported: $outver"
+    if [ "$outver" = "${version}" ]; then
+      echo "  OK: wrapper version matches ${version}"
+    else
+      echo "  FAIL: wrapper reported \"$outver\"; expected \"${version}\""
+      exit 1
+    fi
+    echo "- Checking JAR manifest contains version..."
+    if ${unzip}/bin/unzip -p "$out/share/java/qortal.jar" META-INF/MANIFEST.MF | grep -Fq "${version}"; then
+      echo "  OK: manifest contains ${version}"
+    else
+      echo "  FAIL: version not found in manifest; manifest head follows:"
+      ${unzip}/bin/unzip -p "$out/share/java/qortal.jar" META-INF/MANIFEST.MF | sed -n '1,120p'
+      exit 1
+    fi
   '';
   meta = with lib; {
     description = "Qortal Core blockchain node";
@@ -41,4 +77,5 @@ maven.buildMavenPackage rec {
     mainProgram = "qortal";
     changelog = "https://github.com/Qortal/qortal/releases/tag/v${version}";
   };
+  # TODO: add default files (settings.json, etc.)
 }
