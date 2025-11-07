@@ -1,10 +1,10 @@
 {
-  lib,
-  maven,
   fetchgit,
   jdk11_headless,
   jre_headless,
+  lib,
   makeWrapper,
+  maven
 }:
 maven.buildMavenPackage rec {
   pname = "qortal";
@@ -14,7 +14,7 @@ maven.buildMavenPackage rec {
     rev = "refs/tags/v${version}";
     hash = "sha256-z6QCUaketVJ+EiMJHVdBtvp8FffklEje+Hoy4aBoNek=";
     leaveDotGit = true;
-    deepClone = true;
+    deepClone= true;
     fetchSubmodules = false;
   };
   mvnHash = "sha256-xhhvJov/HG7Hbj3RCWYVrJgW39kK2E23X0cLmGPhljs=";
@@ -37,7 +37,7 @@ maven.buildMavenPackage rec {
     homepage = "https://github.com/Qortal/qortal";
     license = licenses.gpl3Only;
     maintainers = with maintainers; [ QuickMythril ];
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     mainProgram = "qortal";
     changelog = "https://github.com/Qortal/qortal/releases/tag/v${version}";
   };
